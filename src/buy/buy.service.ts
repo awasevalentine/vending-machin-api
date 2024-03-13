@@ -24,23 +24,28 @@ export class BuyService {
                 const getProduct = await this._productService.getProduct(item.productId);
                 const getBuyerBalance = await this._depositService.getBalance(item.buyerId);
                 
-                if (getProduct && getBuyerBalance >= item.totalAmount && getProduct.amountAvailable >= item.quantity) {
-                    const debitPayload = {
-                        buyerId: item.buyerId,
-                        amount: item.totalAmount
-                    };
-    
-                    await this._depositService.debitAccount(debitPayload);
-                    await this._productService.updateProductQauntity(item.productId, item.quantity);
-                    const purchase = {
-                        productName: getProduct.productName,
-                        quantity: item?.quantity,
-                        productCost: getProduct.cost,
-                        totalCost: item?.totalAmount
+                if (getProduct && getBuyerBalance >= item.totalAmount) {
+                    if(getProduct.amountAvailable >= item.quantity){
+                        const debitPayload = {
+                            buyerId: item.buyerId,
+                            amount: item.totalAmount
+                        };
+        
+                        await this._depositService.debitAccount(debitPayload);
+                        await this._productService.updateProductQauntity(item.productId, item.quantity);
+                        const purchase = {
+                            productName: getProduct.productName,
+                            quantity: item?.quantity,
+                            productCost: getProduct.cost,
+                            totalCost: item?.totalAmount
+                        }
+                        productsBought.push(purchase)
+                    }else{
+                        throw new Error('Quantity more than available product')
                     }
-                    productsBought.push(purchase)
+     
                 }else{
-                    throw new Error('Quantity more than available product')
+                    throw new Error('Your balance is too low to make this purchase')
                 }
             }
             return productsBought
